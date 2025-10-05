@@ -1,0 +1,117 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+body {
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: url('https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&q=80') no-repeat center center/cover;
+    color: #fff;
+}
+
+/* --- Styles for Logo --- */
+.logo-container {
+    margin-bottom: 5px;
+}
+
+.logo {
+    width: 45px;
+    height: 45px;
+    fill: rgba(255, 255, 255, 0.85);
+}
+
+.tanpura-container {
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(25px) saturate(150%);
+    -webkit-backdrop-filter: blur(25px) saturate(150%);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 30px 40px;
+    text-align: center;
+    width: 90%;
+    max-width: 600px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+h1 { 
+    margin-top: 0; 
+    margin-bottom: 10px;
+    font-weight: 600; 
+}
+
+p { color: rgba(255, 255, 255, 0.85); line-height: 1.6; }
+
+.note-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.note-button {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 15px 10px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.note-button:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-3px);
+}
+
+.note-button.active {
+    background: #007aff;
+    border-color: #007aff;
+    color: white;
+    box-shadow: 0 0 20px rgba(0, 122, 255, 0.5);
+    transform: translateY(-3px);
+}
+
+.controls {
+    margin: 30px 0;
+    text-align: center;
+}
+
+#play-pause-btn {
+    background-color: #007aff;
+    border: none;
+    border-radius: 50%;
+    width: 70px;
+    height: 70px;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 15px rgba(0, 122, 255, 0.4);
+}
+
+#play-pause-btn:hover {
+    transform: scale(1.1);
+}
+
+#play-pause-btn:disabled {
+    background-color: rgba(255, 255, 255, 0.2);
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+#play-pause-btn .icon {
+    width: 32px;
+    height: 32px;
+    color: white;
+}
+
+/* ===== THIS SECTION IS UPDATED ===== */
+.status-area {
+    display: none; /* Hides the status message text */
+}
