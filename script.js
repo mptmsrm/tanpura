@@ -1,20 +1,16 @@
 document.addEventListener('DOMContentLoaded', () => {
-
-    // --- Configuration ---
     const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
-    // --- DOM Elements ---
     const noteSelector = document.getElementById('note-selector');
     const playPauseBtn = document.getElementById('play-pause-btn');
     const playIcon = document.getElementById('play-icon');
     const pauseIcon = document.getElementById('pause-icon');
     const volumeSlider = document.getElementById('volume-slider');
 
-    // --- Web Audio Setup ---
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const gainNode = audioContext.createGain();
-    gainNode.gain.value = volumeSlider ? parseFloat(volumeSlider.value) : 0.7;
     gainNode.connect(audioContext.destination);
+    gainNode.gain.value = volumeSlider ? parseFloat(volumeSlider.value) : 0.7;
 
     let currentSource = null;
     let activeButton = null;
@@ -31,32 +27,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function createNoteButtons() {
         notes.forEach(note => {
-            const button = document.createElement('button');
-            button.className = 'note-button';
-            button.textContent = note;
-            button.dataset.note = note;
-            button.addEventListener('click', handleNoteClick);
-            noteSelector.appendChild(button);
+            const btn = document.createElement('button');
+            btn.className = 'note-button';
+            btn.textContent = note;
+            btn.dataset.note = note;
+            btn.addEventListener('click', handleNoteClick);
+            noteSelector.appendChild(btn);
         });
     }
 
     async function handleNoteClick(event) {
         if (!isContextUnlocked) unlockAudioContext();
-
         const clickedButton = event.currentTarget;
 
         if (activeButton) activeButton.classList.remove('active');
         clickedButton.classList.add('active');
 
         stopAudio();
-        if (audioContext.state === 'suspended') {
-            await audioContext.resume();
-        }
+        if (audioContext.state === 'suspended') await audioContext.resume();
 
         const note = clickedButton.dataset.note;
-        const encodedNote = encodeURIComponent(note);
-        const filePath = `Tanpura ${encodedNote}.wav`;
-
+        const filePath = `Tanpura ${encodeURIComponent(note)}.wav`;
         await loadAndPlayAudio(filePath, clickedButton);
     }
 
@@ -72,20 +63,16 @@ document.addEventListener('DOMContentLoaded', () => {
             currentSource.buffer = audioBuffer;
             currentSource.loop = true;
 
-            // Ensure proper connection to the gain node every time
+            // The magic line: connect to gainNode (which is always connected to destination)
             currentSource.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-
             currentSource.start(0);
 
             activeButton = buttonElement;
             updatePlayPauseButton(true);
             playPauseBtn.disabled = false;
-
-        } catch (error) {
-            console.error('Audio Error:', error);
+        } catch (err) {
+            console.error(err);
             buttonElement.classList.remove('active');
-            activeButton = null;
             stopAudio();
         }
     }
@@ -94,13 +81,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!isContextUnlocked) unlockAudioContext();
 
         if (audioContext.state === 'running') {
-            audioContext.suspend().then(() => {
-                updatePlayPauseButton(false);
-            });
-        } else if (audioContext.state === 'suspended') {
-            audioContext.resume().then(() => {
-                updatePlayPauseButton(true);
-            });
+            audioContext.suspend().then(() => updatePlayPauseButton(false));
+        } else {
+            audioContext.resume().then(() => updatePlayPauseButton(true));
         }
     }
 
@@ -108,9 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentSource) {
             try {
                 currentSource.stop();
-            } catch (e) {
-                console.warn('Source already stopped.');
-            }
+            } catch {}
             currentSource = null;
         }
     }
@@ -120,15 +101,14 @@ document.addEventListener('DOMContentLoaded', () => {
         pauseIcon.style.display = isPlaying ? 'block' : 'none';
     }
 
-    // --- Volume Control (live updates) ---
+    // Proper, guaranteed volume control
     if (volumeSlider) {
-        volumeSlider.addEventListener('input', e => {
-            const value = parseFloat(e.target.value);
-            gainNode.gain.setTargetAtTime(value, audioContext.currentTime, 0.01);
+        volumeSlider.addEventListener('input', () => {
+            const val = parseFloat(volumeSlider.value);
+            gainNode.gain.setValueAtTime(val, audioContext.currentTime);
         });
     }
 
-    // --- Initialize ---
     createNoteButtons();
     playPauseBtn.addEventListener('click', handlePlayPause);
 });
