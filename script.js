@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const playIcon = document.getElementById('play-icon');
     const pauseIcon = document.getElementById('pause-icon');
     const volumeSlider = document.getElementById('volume-slider');
+    const muteBtn = document.getElementById('mute-btn');
 
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const gainNode = audioContext.createGain();
@@ -16,6 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentSource = null;
     let activeButton = null;
     let isContextUnlocked = false;
+    let isMuted = false;
+    let lastVolume = gainNode.gain.value;
 
     playPauseBtn.disabled = true;
 
@@ -63,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentSource = audioContext.createBufferSource();
             currentSource.buffer = audioBuffer;
             currentSource.loop = true;
-            currentSource.connect(gainNode); // connect to gain node here
+            currentSource.connect(gainNode);
             currentSource.start();
 
             activeButton = buttonElement;
@@ -101,11 +104,28 @@ document.addEventListener('DOMContentLoaded', () => {
         pauseIcon.style.display = isPlaying ? 'block' : 'none';
     }
 
-    // ACTUAL working volume control
+    // Volume slider control
     if (volumeSlider) {
         volumeSlider.addEventListener('input', () => {
             const value = parseFloat(volumeSlider.value);
             gainNode.gain.setValueAtTime(value, audioContext.currentTime);
+            if (!isMuted) lastVolume = value;
+        });
+    }
+
+    // Mute button control
+    if (muteBtn) {
+        muteBtn.addEventListener('click', () => {
+            if (!isMuted) {
+                lastVolume = gainNode.gain.value;
+                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                muteBtn.textContent = 'Unmute';
+                isMuted = true;
+            } else {
+                gainNode.gain.setValueAtTime(lastVolume, audioContext.currentTime);
+                muteBtn.textContent = 'Mute';
+                isMuted = false;
+            }
         });
     }
 
