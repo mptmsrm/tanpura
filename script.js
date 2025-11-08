@@ -8,24 +8,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const playPauseBtn = document.getElementById('play-pause-btn');
     const playIcon = document.getElementById('play-icon');
     const pauseIcon = document.getElementById('pause-icon');
-    const volumeSlider = document.getElementById('volume-slider'); // === MODIFICATION ===
+    const volumeSlider = document.getElementById('volume-slider'); // new
 
     // --- Web Audio API Setup ---
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const gainNode = audioContext.createGain(); // === MODIFICATION ===
-    
+    const gainNode = audioContext.createGain(); // new
+    gainNode.gain.value = volumeSlider ? parseFloat(volumeSlider.value) : 0.7;
+    gainNode.connect(audioContext.destination);
+
     let currentSource = null;
     let activeButton = null;
     let isContextUnlocked = false;
-
-    // === MODIFICATION ===
-    // Connect the gain node to the speakers (destination)
-    // This only needs to be done once.
-    gainNode.connect(audioContext.destination);
-    
-    // Set the initial volume from the slider's default value
-    gainNode.gain.value = volumeSlider.value;
-
 
     playPauseBtn.disabled = true;
 
@@ -52,13 +45,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const clickedButton = event.currentTarget;
 
-        // 1. Immediately update the visual highlight for instant feedback.
-        if (activeButton) {
-            activeButton.classList.remove('active');
-        }
+        // visual highlight
+        if (activeButton) activeButton.classList.remove('active');
         clickedButton.classList.add('active');
-        
-        // 2. Stop any existing audio source and resume context if needed.
+
         stopAudio();
         if (audioContext.state === 'suspended') {
             await audioContext.resume();
@@ -67,9 +57,77 @@ document.addEventListener('DOMContentLoaded', () => {
         const note = clickedButton.dataset.note;
         const encodedNote = encodeURIComponent(note);
         const filePath = `Tanpura ${encodedNote}.wav`;
-        
-        // 3. Load and play the new sound.
+
         await loadAndPlayAudio(filePath, clickedButton);
     }
-    
+
     async function loadAndPlayAudio(url, buttonElement) {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`File not found: ${url}`);
+
+            const arrayBuffer = await response.arrayBuffer();
+            const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+            currentSource = audioContext.createBufferSource();
+            currentSource.buffer = audioBuffer;
+            currentSource.loop = true;
+
+            // connect to gain node, not directly to destination
+            currentSource.connect(gainNode);
+            currentSource.start(0);
+
+            activeButton = buttonElement;
+            updatePlayPauseButton(true);
+            playPauseBtn.disabled = false;
+
+        } catch (error) {
+            console.error('Audio Error:', error);
+            buttonElement.classList.remove('active');
+            activeButton = null;
+            stopAudio();
+        }
+    }
+
+    function handlePlayPause() {
+        if (!isContextUnlocked) unlockAudioContext();
+
+        if (audioContext.state === 'running') {
+            audioContext.suspend().then(() => {
+                updatePlayPauseButton(false);
+            });
+        } else if (audioContext.state === 'suspended') {
+            audioContext.resume().then(() => {
+                updatePlayPauseButton(true);
+            });
+        }
+    }
+
+    function stopAudio() {
+        if (currentSource) {
+            currentSource.stop();
+            currentSource = null;
+        }
+    }
+
+    function updatePlayPauseButton(isPlaying) {
+        if (isPlaying) {
+            playIcon.style.display = 'none';
+            pauseIcon.style.display = 'block';
+        } else {
+            playIcon.style.display = 'block';
+            pauseIcon.style.display = 'none';
+        }
+    }
+
+    // --- Volume Control ---
+    if (volumeSlider) {
+        volumeSlider.addEventListener('input', () => {
+            gainNode.gain.value = parseFloat(volumeSlider.value);
+        });
+    }
+
+    // --- Initialisation ---
+    createNoteButtons();
+    playPauseBtn.addEventListener('click', handlePlayPause);
+});
